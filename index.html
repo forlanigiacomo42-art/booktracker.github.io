@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      background-color: #000000;
+      color: #f4f4f5;
+    }
+    /* Scrollbar personalizzata scura */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+    .tile-active {
+      outline: 3px solid #ffffff;
+      outline-offset: 2px;
+    }
+    .status-row-active {
+      background-color: #27272a;
+      border-radius: 0.75rem;
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col md:flex-row select-none">
+
+  <!-- SIDEBAR SINISTRA (Stile iPadOS Book Tracker) -->
+  <aside class="w-full md:w-80 lg:w-88 bg-[#141416] border-b md:border-b-0 md:border-r border-[#262629] flex flex-col h-auto md:h-full overflow-y-auto shrink-0 p-4 space-y-6">
+    
+    <!-- Top Bar Sidebar -->
+    <div class="flex items-center justify-between text-[#38bdf8] text-sm font-medium px-1">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-table-columns text-lg"></i>
+        <span>Libreria</span>
+      </div>
+      <button onclick="openOnlineSearchModal()" class="hover:opacity-80 flex items-center gap-1" title="Aggiungi nuovo libro">
+        <i class="fa-solid fa-circle-plus text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Titolo App -->
+    <h1 class="text-3xl font-extrabold tracking-tight text-white px-1">Book Tracker</h1>
+
+    <!-- 6 Riquadri Colorati (Bento Grid) -->
+    <div class="grid grid-cols-2 gap-2.5">
+      <!-- Tutti -->
+      <button onclick="setMainFilter('all')" id="tile-all" class="bg-[#32ade6] hover:brightness-110 transition rounded-2xl p-3 text-left flex flex-col justify-between h-20 tile-active">
+        <div class="flex items-center justify-between w-full">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+            <i class="fa-solid fa-inbox text-sm"></i>
+          </div>
+          <span id="count-all" class="text-xl font-bold text-white">0</span>
+        </div>
+        <span class="text-xs font-bold text-white tracking-wide">Tutti</span>
+      </button>
+
+      <!-- Libreria (Posseduti) -->
+      <button onclick="setMainFilter('owned')" id="tile-owned" class="bg-[#ff9f0a] hover:brightness-110 transition rounded-2xl p-3 text-left flex flex-col justify-between h-20">
+        <div class="flex items-center justify-between w-full">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+            <i class="fa-solid fa-book-bookmark text-sm"></i>
+          </div>
+          <span id="count-owned" class="text-xl font-bold text-white">0</span>
+        </div>
+        <span class="text-xs font-bold text-white tracking-wide">Libreria</span>
+      </button>
+
+      <!-- Lista dei desideri -->
+      <button onclick="setMainFilter('wishlist')" id="tile-wishlist" class="bg-[#ff453a] hover:brightness-110 transition rounded-2xl p-3 text-left flex flex-col justify-between h-20">
+        <div class="flex items-center justify-between w-full">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+            <i class="fa-solid fa-bookmark text-sm"></i>
+          </div>
+          <span id="count-wishlist" class="text-xl font-bold text-white">0</span>
+        </div>
+        <span class="text-xs font-bold text-white tracking-wide truncate">Lista dei des...</span>
+      </button>
+
+      <!-- Non posseduti -->
+      <button onclick="setMainFilter('not_owned')" id="tile-not_owned" class="bg-[#bf5af2] hover:brightness-110 transition rounded-2xl p-3 text-left flex flex-col justify-between h-20">
+        <div class="flex items-center justify-between w-full">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+            <i class="fa-solid fa-box-archive text-sm"></i>
+          </div>
+          <span id="count-not_owned" class="text-xl font-bold text-white">0</span>
+        </div>
+        <span class="text-xs font-bold text-white tracking-wide truncate">Non posseduti</span>
+      </button>
+
+      <!-- Statistiche (Autori & Generi) -->
+      <button onclick="showSection('stats')" id="tile-stats" class="bg-[#30d158] hover:brightness-110 transition rounded-2xl p-3 text-left flex flex-col justify-between h-20">
+        <div class="flex items-center justify-between w-full">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+            <i class="fa-solid fa-chart-simple text-sm"></i>
+          </div>
+        </div>
+        <span class="text-xs font-bold text-white tracking-wide">Statistiche</span>
+      </button>
+
+      <!-- Tracker Giornaliero -->
+      <button onclick="showSection('tracker')" id="tile-tracker" class="bg-[#0a84ff] hover:brightness-110 transition rounded-2xl p-3 text-left flex flex-col justify-between h-20">
+        <div class="flex items-center justify-between w-full">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+            <i class="fa-solid fa-calendar-day text-sm"></i>
+          </div>
+          <span id="count-pages-today" class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full text-white">0 p.</span>
+        </div>
+        <span class="text-xs font-bold text-white tracking-wide">Pagine / Giorno</span>
+      </button>
+    </div>
+
+    <!-- Widget: In lettura -->
+    <div class="space-y-2.5">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-base font-bold text-white">In lettura</h2>
+        <i class="fa-solid fa-chevron-down text-xs text-[#38bdf8]"></i>
+      </div>
+      <div id="sidebarReadingWidget" class="space-y-2"></div>
+    </div>
+
+    <!-- Widget: Mini Grafico Statistiche Pagine -->
+    <div class="space-y-2.5">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-base font-bold text-white">Statistiche</h2>
+        <button onclick="showSection('tracker')" class="text-xs text-[#38bdf8] hover:underline">Registra pagine</button>
+      </div>
+      <div class="bg-[#1c1c1e] rounded-2xl p-3.5 border border-[#2c2c2e]">
+        <div id="sidebarMiniChart" class="h-28 w-full"></div>
+        <div class="flex items-center gap-4 text-[11px] text-zinc-400 mt-2 pt-2 border-t border-zinc-800">
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#32ade6]"></span> Pagine lette</span>
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#ff9f0a]"></span> Andamento 7gg</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Widget: Stati di lettura -->
+    <div class="space-y-1.5 pb-4">
+      <div class="flex items-center justify-between px-1 mb-2">
+        <h2 class="text-base font-bold text-white">Stati di lettura</h2>
+        <i class="fa-solid fa-chevron-down text-xs text-[#38bdf8]"></i>
+      </div>
+
+      <button onclick="setMainFilter('status_unread')" id="row-status_unread" class="w-full flex items-center justify-between px-2.5 py-2 text-sm text-zinc-200 hover:bg-[#27272a] rounded-xl transition">
+        <span class="flex items-center gap-3"><i class="fa-regular fa-circle text-zinc-400 w-4"></i> Non letto</span>
+        <span id="count-status-unread" class="text-zinc-500 font-medium">0</span>
+      </button>
+
+      <button onclick="setMainFilter('status_to_read')" id="row-status_to_read" class="w-full flex items-center justify-between px-2.5 py-2 text-sm text-zinc-200 hover:bg-[#27272a] rounded-xl transition">
+        <span class="flex items-center gap-3"><i class="fa-solid fa-list-ul text-zinc-400 w-4"></i> Da leggere</span>
+        <span id="count-status-to_read" class="text-zinc-500 font-medium">0</span>
+      </button>
+
+      <button onclick="setMainFilter('status_reading')" id="row-status_reading" class="w-full flex items-center justify-between px-2.5 py-2 text-sm text-zinc-200 hover:bg-[#27272a] rounded-xl transition">
+        <span class="flex items-center gap-3"><i class="fa-solid fa-glasses text-zinc-400 w-4"></i> In lettura</span>
+        <span id="count-status-reading" class="text-zinc-500 font-medium">0</span>
+      </button>
+
+      <button onclick="setMainFilter('status_read')" id="row-status_read" class="w-full flex items-center justify-between px-2.5 py-2 text-sm text-zinc-200 hover:bg-[#27272a] rounded-xl transition">
+        <span class="flex items-center gap-3"><i class="fa-solid fa-check text-zinc-400 w-4"></i> Letto</span>
+        <span id="count-status-read" class="text-zinc-500 font-medium">0</span>
+      </button>
+
+      <button onclick="setMainFilter('status_unfinished')" id="row-status_unfinished" class="w-full flex items-center justify-between px-2.5 py-2 text-sm text-zinc-200 hover:bg-[#27272a] rounded-xl transition">
+        <span class="flex items-center gap-3"><i class="fa-solid fa-ban text-zinc-400 w-4"></i> Non finito</span>
+        <span id="count-status-unfinished" class="text-zinc-500 font-medium">0</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- AREA PRINCIPALE DESTRA -->
+  <main class="flex-1 h-full overflow-y-auto bg-black p-5 md:p-7 space-y-6">
+
+    <!-- Top Header Area Principale -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 id="mainViewTitle" class="text-xl font-bold text-white">Tutti</h2>
+        <p id="mainViewSubtitle" class="text-sm font-semibold text-zinc-400">0 libri</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Pulsante Cerca Online / Aggiungi -->
+        <button onclick="openOnlineSearchModal()" class="w-9 h-9 rounded-full bg-[#1c1c1e] hover:bg-[#2c2c2e] text-[#38bdf8] flex items-center justify-center transition" title="Cerca libro online e aggiungi">
+          <i class="fa-solid fa-plus text-lg"></i>
+        </button>
+
+        <!-- Barra di ricerca rapida nella libreria -->
+        <div class="relative w-full sm:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-zinc-500 text-sm"></i>
+          <input type="text" id="localSearchInput" oninput="renderMainGrid()" placeholder="Cerca nella libreria" 
+            class="w-full bg-[#1c1c1e] text-sm text-white placeholder-zinc-500 pl-9 pr-4 py-1.5 rounded-xl border border-transparent focus:border-[#38bdf8] focus:outline-none" />
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 1: GRIGLIA LIBRI -->
+    <section id="section-books">
+      <div id="booksGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- VISTA 2: STATISTICHE PER AUTORE E GENERE -->
+    <section id="section-stats" class="hidden space-y-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-[#1c1c1e] p-4 rounded-2xl border border-[#2c2c2e]">
+          <span class="text-xs text-zinc-400">Libri Letti</span>
+          <p id="statReadCount" class="text-2xl font-bold text-[#30d158] mt-1">0</p>
+        </div>
+        <div class="bg-[#1c1c1e] p-4 rounded-2xl border border-[#2c2c2e]">
+          <span class="text-xs text-zinc-400">In Libreria (Posseduti)</span>
+          <p id="statOwnedCount" class="text-2xl font-bold text-[#ff9f0a] mt-1">0</p>
+        </div>
+        <div class="bg-[#1c1c1e] p-4 rounded-2xl border border-[#2c2c2e]">
+          <span class="text-xs text-zinc-400">Voto Medio (0-10)</span>
+          <p id="statAvgScore" class="text-2xl font-bold text-[#32ade6] mt-1">-</p>
+        </div>
+        <div class="bg-[#1c1c1e] p-4 rounded-2xl border border-[#2c2c2e]">
+          <span class="text-xs text-zinc-400">Pagine Totali Lette</span>
+          <p id="statTotalPages" class="text-2xl font-bold text-white mt-1">0</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Libri per Autore -->
+        <div class="bg-[#1c1c1e] p-5 rounded-2xl border border-[#2c2c2e] space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-user-pen text-[#ff9f0a]"></i> Libri letti per Autore
+            </h3>
+            <label class="text-xs text-zinc-400 flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="filterStatsOnlyRead" checked onchange="renderStatsView()" class="rounded bg-zinc-800 border-zinc-700 text-[#32ade6]" />
+              Solo "Letti"
+            </label>
+          </div>
+          <div id="authorsBreakdown" class="space-y-3"></div>
+        </div>
+
+        <!-- Libri per Genere -->
+        <div class="bg-[#1c1c1e] p-5 rounded-2xl border border-[#2c2c2e] space-y-4">
+          <h3 class="font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-[#30d158]"></i> Libri letti per Genere
+          </h3>
+          <div id="genresBreakdown" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA 3: TRACKER GIORNALIERO PAGINE -->
+    <section id="section-tracker" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-[#1c1c1e] p-5 rounded-2xl border border-[#2c2c2e] space-y-4 h-fit">
+          <h3 class="font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-book-open-reader text-[#0a84ff]"></i> Registra pagine lette
+          </h3>
+          <form onsubmit="submitDailyLog(event)" class="space-y-3.5 text-sm">
+            <div>
+              <label class="block text-xs text-zinc-400 mb-1">Libro</label>
+              <select id="trackerBookSelect" required class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700 focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-xs text-zinc-400 mb-1">Data</label>
+              <input type="date" id="trackerDateInput" required class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs text-zinc-400 mb-1">Pagine lette nella sessione</label>
+              <input type="number" id="trackerPagesInput" min="1" required placeholder="Es. 30" class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700 focus:outline-none" />
+            </div>
+            <button type="submit" class="w-full bg-[#0a84ff] hover:brightness-110 text-white font-semibold py-2.5 rounded-xl transition">
+              Aggiungi Pagine
+            </button>
+          </form>
+        </div>
+
+        <div class="lg:col-span-2 bg-[#1c1c1e] p-5 rounded-2xl border border-[#2c2c2e] space-y-4">
+          <h3 class="font-bold text-white">Storico sessioni di lettura</h3>
+          <div id="trackerLogsList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALE 1: CERCA LIBRO ONLINE CON EDIZIONE (Google Books) -->
+  <div id="onlineSearchModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#1c1c1e] border border-[#2c2c2e] rounded-3xl max-w-3xl w-full p-6 space-y-5 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div>
+          <h3 class="text-lg font-bold text-white">Aggiungi Libro (Ricerca Edizione Online)</h3>
+          <p class="text-xs text-zinc-400">Cerca il titolo o ISBN online oppure inseriscilo manualmente</p>
+        </div>
+        <button onclick="closeOnlineSearchModal()" class="text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <form onsubmit="searchGoogleBooks(event)" class="flex flex-col sm:flex-row gap-2.5">
+        <input type="text" id="onlineQueryInput" required placeholder="Titolo, autore, editore o ISBN (es. Uno nessuno centomila Mondadori)..." 
+          class="flex-1 bg-[#2c2c2e] text-white text-sm px-4 py-2.5 rounded-xl border border-zinc-700 focus:border-[#38bdf8] focus:outline-none" />
+        <button type="submit" class="bg-[#0a84ff] hover:brightness-110 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+          Cerca Online
+        </button>
+        <button type="button" onclick="openBookEditorModal()" class="bg-[#2c2c2e] hover:bg-zinc-700 text-zinc-200 text-sm font-medium px-4 py-2.5 rounded-xl transition">
+          Manuale
+        </button>
+      </form>
+
+      <div id="onlineSearchStatus" class="hidden text-center py-6 text-sm text-zinc-400"></div>
+      <div id="onlineResultsList" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <!-- MODALE 2: DETTAGLI LIBRO, STATO LETTURA, POSSESSO E VOTO (0-10 DECIMALI) -->
+  <div id="bookEditorModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#1c1c1e] border border-[#2c2c2e] rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <h3 id="editorModalTitle" class="text-lg font-bold text-white">Configura Libro</h3>
+        <button onclick="closeBookEditorModal()" class="text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <form onsubmit="saveBook(event)" class="space-y-4 text-sm">
+        <input type="hidden" id="editBookId" />
+        <input type="hidden" id="editBookCover" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-xs text-zinc-400 mb-1">Titolo (con eventuale edizione)</label>
+            <input type="text" id="editTitle" required class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700" />
+          </div>
+
+          <div>
+            <label class="block text-xs text-zinc-400 mb-1">Autore</label>
+            <input type="text" id="editAuthor" required class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700" />
+          </div>
+
+          <div>
+            <label class="block text-xs text-zinc-400 mb-1">Genere</label>
+            <input type="text" id="editGenre" required placeholder="Es. Narrativa, Thriller..." class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700" />
+          </div>
+
+          <!-- STATO DI POSSESSO / LISTA DESIDERI -->
+          <div>
+            <label class="block text-xs text-zinc-400 mb-1">Possesso / Posizione</label>
+            <select id="editOwnership" class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700">
+              <option value="owned">🟠 Libreria (Posseduto)</option>
+              <option value="wishlist">🔴 Lista dei desideri</option>
+              <option value="not_owned">🟣 Non posseduto (Prestito/Altro)</option>
+            </select>
+          </div>
+
+          <!-- STATO DI LETTURA -->
+          <div>
+            <label class="block text-xs text-zinc-400 mb-1">Stato di lettura</label>
+            <select id="editReadingStatus" onchange="syncPagesWithStatus()" class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700">
+              <option value="read">✅ Letto</option>
+              <option value="reading">👓 In lettura</option>
+              <option value="unread">⚪ Non letto</option>
+              <option value="to_read">📋 Da leggere</option>
+              <option value="unfinished">🚫 Non finito</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs text-zinc-400 mb-1">Pagine Lette</label>
+            <input type="number" id="editCurrentPages" min="0" value="0" class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700" />
+          </div>
+
+          <div>
+            <label class="block text-xs text-zinc-400 mb-1">Pagine Totali Edizione</label>
+            <input type="number" id="editTotalPages" min="1" required value="250" class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700" />
+          </div>
+
+          <!-- VALUTAZIONE DECIMALE 0-10 -->
+          <div class="sm:col-span-2 bg-[#141416] p-3.5 rounded-2xl border border-zinc-800">
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold text-[#38bdf8] flex items-center gap-1.5">
+                <i class="fa-solid fa-star"></i> Valutazione (da 0.0 a 10.0)
+              </label>
+              <span class="text-xs text-zinc-500">Lascia vuoto se non valutato</span>
+            </div>
+            <input type="number" id="editRating" min="0" max="10" step="0.1" placeholder="Es. 8.6" 
+              class="w-full bg-[#2c2c2e] text-white p-2.5 rounded-xl border border-zinc-700 font-bold text-[#38bdf8]" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-zinc-800">
+          <button type="button" id="deleteBookBtn" onclick="deleteCurrentBook()" class="hidden text-[#ff453a] hover:underline text-xs font-semibold">
+            <i class="fa-solid fa-trash mr-1"></i> Elimina libro
+          </button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" onclick="closeBookEditorModal()" class="px-4 py-2 rounded-xl bg-[#2c2c2e] text-zinc-300 text-xs font-semibold">Annulla</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-[#0a84ff] text-white text-xs font-semibold">Salva</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // --- LIBRI INIZIALI ISPIRATI AGLI SCREENSHOT ---
+    const initialSampleBooks = [
+      {
+        id: 'b1',
+        title: 'Billy Summers',
+        author: 'Stephen King',
+        genre: 'Thriller',
+        ownership: 'owned',
+        readingStatus: 'read',
+        currentPages: 540,
+        totalPages: 540,
+        rating: 8.6,
+        cover: 'https://books.google.com/books/content?id=y2E2EAAAQBAJ&printsec=frontcover&img=1&zoom=1'
+      },
+      {
+        id: 'b2',
+        title: 'Mille splendidi soli',
+        author: 'Khaled Hosseini',
+        genre: 'Narrativa',
+        ownership: 'owned',
+        readingStatus: 'read',
+        currentPages: 432,
+        totalPages: 432,
+        rating: 8.3,
+        cover: 'https://books.google.com/books/content?id=4uB9AwAAQBAJ&printsec=frontcover&img=1&zoom=1'
+      },
+      {
+        id: 'b3',
+        title: 'Uno, nessuno e centomila (Mondadori)',
+        author: 'Luigi Pirandello',
+        genre: 'Classici',
+        ownership: 'owned',
+        readingStatus: 'reading',
+        currentPages: 0,
+        totalPages: 210,
+        rating: null,
+        cover: 'https://books.google.com/books/content?id=p7rYDwAAQBAJ&printsec=frontcover&img=1&zoom=1'
+      },
+      {
+        id: 'b4',
+        title: 'La verità sul caso Harry Quebert',
+        author: 'Joël Dicker',
+        genre: 'Thriller',
+        ownership: 'owned',
+        readingStatus: 'read',
+        currentPages: 780,
+        totalPages: 780,
+        rating: 8.8,
+        cover: 'https://books.google.com/books/content?id=k67ZAAAAQBAJ&printsec=frontcover&img=1&zoom=1'
+      },
+      {
+        id: 'b5',
+        title: 'Cecità',
+        author: 'José Saramago',
+        genre: 'Narrativa',
+        ownership: 'wishlist',
+        readingStatus: 'unread',
+        currentPages: 0,
+        totalPages: 316,
+        rating: null,
+        cover: 'https://books.google.com/books/content?id=I7fYDwAAQBAJ&printsec=frontcover&img=1&zoom=1'
+      }
+    ];
+
+    let books = JSON.parse(localStorage.getItem('bt_dark_books')) || initialSampleBooks;
+    let logs = JSON.parse(localStorage.getItem('bt_dark_logs')) || [];
+    let activeFilter = 'all';
+
+    const getTodayISO = () => new Date().toISOString().split('T')[0];
+
+    function saveState() {
+      localStorage.setItem('bt_dark_books', JSON.stringify(books));
+      localStorage.setItem('bt_dark_logs', JSON.stringify(logs));
+      updateSidebarUI();
+    }
+
+    // --- AGGIORNAMENTO SIDEBAR E CONTATORI ---
+    function updateSidebarUI() {
+      document.getElementById('count-all').textContent = books.length;
+      document.getElementById('count-owned').textContent = books.filter(b => b.ownership === 'owned').length;
+      document.getElementById('count-wishlist').textContent = books.filter(b => b.ownership === 'wishlist').length;
+      document.getElementById('count-not_owned').textContent = books.filter(b => b.ownership === 'not_owned').length;
+
+      document.getElementById('count-status-unread').textContent = books.filter(b => b.readingStatus === 'unread').length;
+      document.getElementById('count-status-to_read').textContent = books.filter(b => b.readingStatus === 'to_read').length;
+      document.getElementById('count-status-reading').textContent = books.filter(b => b.readingStatus === 'reading').length;
+      document.getElementById('count-status-read').textContent = books.filter(b => b.readingStatus === 'read').length;
+      document.getElementById('count-status-unfinished').textContent = books.filter(b => b.readingStatus === 'unfinished').length;
+
+      const todayPages = logs
+        .filter(l => l.date === getTodayISO())
+        .reduce((acc, l) => acc + Number(l.pages), 0);
+      document.getElementById('count-pages-today').textContent = `${todayPages} p.`;
+
+      renderSidebarReadingWidget();
+      renderSidebarMiniChart();
+    }
+
+    // --- WIDGET "IN LETTURA" NELLA SIDEBAR ---
+    function renderSidebarReadingWidget() {
+      const container = document.getElementById('sidebarReadingWidget');
+      const readingBooks = books.filter(b => b.readingStatus === 'reading');
+
+      if (readingBooks.length === 0) {
+        container.innerHTML = `<div class="bg-[#1c1c1e] rounded-2xl p-3.5 text-xs text-zinc-500">Nessun libro in lettura</div>`;
+        return;
+      }
+
+      container.innerHTML = readingBooks.map(b => {
+        const remaining = Math.max(0, b.totalPages - b.currentPages);
+        const pct = Math.min(100, Math.round((b.currentPages / b.totalPages) * 100)) || 0;
+        return `
+          <div onclick="openBookEditorModal('${b.id}')" class="bg-[#1c1c1e] hover:bg-[#242427] cursor-pointer rounded-2xl p-3 border border-[#2c2c2e] flex gap-3 items-center relative">
+            <img src="${b.cover || 'https://placehold.co/80x120/27272a/a1a1aa?text=Libro'}" class="w-11 h-16 object-cover rounded-lg shrink-0" />
+            <div class="min-w-0 flex-1 pr-6">
+              <p class="text-xs font-bold text-white line-clamp-2 leading-snug">${b.title}</p>
+              <p class="text-[11px] text-zinc-400 mt-1">${b.currentPages} di ${b.totalPages} pagine</p>
+              <p class="text-[11px] text-zinc-500">${remaining} pagine rimaste</p>
+            </div>
+            <span class="absolute bottom-2.5 right-3 text-[11px] font-semibold text-zinc-400">${pct}%</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- MINI GRAFICO LINEA NELLA SIDEBAR (COME NELLO SCREENSHOT) ---
+    function renderSidebarMiniChart() {
+      const box = document.getElementById('sidebarMiniChart');
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const iso = d.toISOString().split('T')[0];
+        const label = d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+        const pages = logs.filter(l => l.date === iso).reduce((s, l) => s + Number(l.pages), 0);
+        days.push({ label, pages });
+      }
+
+      const maxVal = Math.max(...days.map(d => d.pages), 50);
+      const width = 240;
+      const height = 75;
+      const points = days.map((d, idx) => {
+        const x = 15 + idx * ((width - 30) / 6);
+        const y = height - 18 - (d.pages / maxVal) * (height - 32);
+        return { x, y, ...d };
+      });
+
+      const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
+
+      box.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height + 18}" class="w-full h-full overflow-visible">
+          <!-- Griglia verticale tratteggiata -->
+          ${points.map(p => `<line x1="${p.x}" y1="5" x2="${p.x}" y2="${height - 12}" stroke="#2c2c2e" stroke-dasharray="2,2" stroke-width="1" />`).join('')}
+          <!-- Linea arancione -->
+          <polyline fill="none" stroke="#ff9f0a" stroke-width="2" points="${polylinePoints}" />
+          <!-- Punti cerchio -->
+          ${points.map(p => `
+            <circle cx="${p.x}" cy="${p.y}" r="3.2" fill="#1c1c1e" stroke="#ff9f0a" stroke-width="2">
+              <title>${p.label}:${p.pages} pagine</title>
+            </circle>
+          `).join('')}
+          <!-- Etichette date alternate -->
+          ${points.filter((_, i) => i % 2 === 0).map(p => `
+            <text x="${p.x}" y="${height + 8}" text-anchor="middle" fill="#71717a" font-size="8.5">${p.label}</text>
+          `).join('')}
+        </svg>
+      `;
+    }
+
+    // --- FILTRI E CAMBIO VISTA ---
+    function clearActiveHighlights() {
+      ['all', 'owned', 'wishlist', 'not_owned', 'stats', 'tracker'].forEach(id => {
+        document.getElementById(`tile-${id}`)?.classList.remove('tile-active');
+      });
+      ['status_unread', 'status_to_read', 'status_reading', 'status_read', 'status_unfinished'].forEach(id => {
+        document.getElementById(`row-${id}`)?.classList.remove('status-row-active');
+      });
+    }
+
+    function setMainFilter(filter) {
+      activeFilter = filter;
+      clearActiveHighlights();
+
+      if (filter.startsWith('status_')) {
+        document.getElementById(`row-${filter}`)?.classList.add('status-row-active');
+      } else {
+        document.getElementById(`tile-${filter}`)?.classList.add('tile-active');
+      }
+
+      document.getElementById('section-books').classList.remove('hidden');
+      document.getElementById('section-stats').classList.add('hidden');
+      document.getElementById('section-tracker').classList.add('hidden');
+
+      renderMainGrid();
+    }
+
+    function showSection(sec) {
+      clearActiveHighlights();
+      document.getElementById(`tile-${sec}`)?.classList.add('tile-active');
+
+      document.getElementById('section-books').classList.add('hidden');
+      document.getElementById('section-stats').classList.add('hidden');
+      document.getElementById('section-tracker').classList.add('hidden');
+
+      if (sec === 'stats') {
+        document.getElementById('mainViewTitle').textContent = 'Statistiche Autori e Generi';
+        document.getElementById('mainViewSubtitle').textContent = 'Analisi della tua libreria';
+        document.getElementById('section-stats').classList.remove('hidden');
+        renderStatsView();
+      } else if (sec === 'tracker') {
+        document.getElementById('mainViewTitle').textContent = 'Tracker Pagine Giornaliero';
+        document.getElementById('mainViewSubtitle').textContent = 'Sessioni di lettura quotidiane';
+        document.getElementById('section-tracker').classList.remove('hidden');
+        renderTrackerView();
+      }
+    }
+
+    // --- RENDERING BADGE E CARD LIBRI (COME NELLO SCREENSHOT) ---
+    function getOwnershipBadge(ownership) {
+      if (ownership === 'owned') {
+        return `<span class="bg-[#ff9f0a] text-white px-2.5 py-0.5 rounded-full text-[11px] flex items-center justify-center" title="Posseduto in Libreria">
+                  <i class="fa-solid fa-book-bookmark"></i>
+                </span>`;
+      }
+      if (ownership === 'wishlist') {
+        return `<span class="bg-[#ff453a] text-white px-2.5 py-0.5 rounded-full text-[11px] flex items-center justify-center" title="Lista dei desideri">
+                  <i class="fa-solid fa-bookmark"></i>
+                </span>`;
+      }
+      return `<span class="bg-[#bf5af2] text-white px-2.5 py-0.5 rounded-full text-[11px] flex items-center justify-center" title="Non posseduto">
+                <i class="fa-solid fa-box-archive"></i>
+              </span>`;
+    }
+
+    function getReadingStatusBadge(status) {
+      if (status === 'read') {
+        return `<span class="bg-[#132c1b] text-[#30d158] px-2.5 py-0.5 rounded-full text-[11px] flex items-center justify-center" title="Letto">
+                  <i class="fa-solid fa-check"></i>
+                </span>`;
+      }
+      if (status === 'reading') {
+        return `<span class="bg-[#112a38] text-[#32ade6] px-2.5 py-0.5 rounded-full text-[11px] flex items-center justify-center" title="In lettura">
+                  <i class="fa-solid fa-glasses"></i>
+                </span>`;
+      }
+      if (status === 'to_read') {
+        return `<span class="bg-zinc-800 text-zinc-300 px-2.5 py-0.5 rounded-full text-[11px] flex items-center justify-center" title="Da leggere">
+                  <i class="fa-solid fa-list-ul"></i>
+                </span>`;
+      }
+      if (status === 'unfinished') {
+        return `<span class="bg-rose-950 text-rose-400 px-2.5 py-0.5 rounded-full text-[11px] flex items-center justify-center" title="Non finito">
+                  <i class="fa-solid fa-ban"></i>
+                </span>`;
+      }
+      return '';
+    }
+
+    function renderMainGrid() {
+      const titles = {
+        all: 'Tutti',
+        owned: 'Libreria',
+        wishlist: 'Lista dei desideri',
+        not_owned: 'Non posseduti',
+        status_unread: 'Non letto',
+        status_to_read: 'Da leggere',
+        status_reading: 'In lettura',
+        status_read: 'Letto',
+        status_unfinished: 'Non finito'
+      };
+
+      const searchQ = document.getElementById('localSearchInput').value.toLowerCase().trim();
+
+      const filtered = books.filter(b => {
+        if (activeFilter === 'owned' && b.ownership !== 'owned') return false;
+        if (activeFilter === 'wishlist' && b.ownership !== 'wishlist') return false;
+        if (activeFilter === 'not_owned' && b.ownership !== 'not_owned') return false;
+        if (activeFilter.startsWith('status_')) {
+          const st = activeFilter.replace('status_', '');
+          if (b.readingStatus !== st) return false;
+        }
+        if (searchQ) {
+          return b.title.toLowerCase().includes(searchQ) || b.author.toLowerCase().includes(searchQ) || b.genre.toLowerCase().includes(searchQ);
+        }
+        return true;
+      });
+
+      document.getElementById('mainViewTitle').textContent = titles[activeFilter] || 'Libreria';
+      document.getElementById('mainViewSubtitle').textContent = `${filtered.length} ${filtered.length === 1 ? 'libro' : 'libri'}`;
+
+      const grid = document.getElementById('booksGrid');
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-[#1c1c1e] rounded-3xl p-12 text-center border border-[#2c2c2e]">
+            <p class="text-zinc-400 text-sm">Nessun libro in questa sezione.</p>
+            <button onclick="openOnlineSearchModal()" class="mt-4 bg-[#0a84ff] text-white text-xs font-semibold px-4 py-2 rounded-xl">
+              + Cerca e Aggiungi Libro
+            </button>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(b => {
+        const pct = Math.min(100, Math.round((b.currentPages / b.totalPages) * 100)) || 0;
+        const ratingPill = (b.rating !== null && b.rating !== '')
+          ? `<span class="bg-[#112a38] text-[#38bdf8] px-2.5 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1">
+               <i class="fa-solid fa-star text-[10px]"></i> ${Number(b.rating).toFixed(1)}
+             </span>`
+          : '';
+
+        const progressBar = b.readingStatus === 'reading'
+          ? `<div class="flex items-center gap-2 mt-3">
+               <div class="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                 <div class="h-full bg-[#32ade6]" style="width: ${pct}%"></div>
+               </div>
+               <span class="text-[11px] text-zinc-400 font-medium">${pct}%</span>
+             </div>`
+          : '';
+
+        return `
+          <div onclick="openBookEditorModal('${b.id}')" class="bg-[#1c1c1e] hover:bg-[#242427] transition cursor-pointer rounded-3xl p-4 flex gap-4 items-center border border-[#262629]">
+            <img src="${b.cover || 'https://placehold.co/120x180/27272a/a1a1aa?text=Copertina'}" alt="${b.title}" 
+              class="w-20 h-28 object-cover rounded-xl shrink-0 shadow-md" />
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-white text-base leading-snug line-clamp-2">${b.title}</h3>
+              <p class="text-sm text-zinc-400 mt-0.5 truncate">${b.author}</p>
+              
+              <!-- Badge Stile Book Tracker -->
+              <div class="flex flex-wrap items-center gap-1.5 mt-2.5">
+                ${getOwnershipBadge(b.ownership)}
+                ${ratingPill}
+                ${getReadingStatusBadge(b.readingStatus)}
+                <span class="text-[11px] text-zinc-500 ml-1 truncate">${b.genre}</span>
+              </div>
+
+              ${progressBar}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- RICERCA ONLINE CON EDIZIONE (GOOGLE BOOKS API) ---
+    let tempOnlineResults = [];
+
+    function openOnlineSearchModal() {
+      document.getElementById('onlineSearchModal').classList.remove('hidden');
+      document.getElementById('onlineSearchModal').classList.add('flex');
+      document.getElementById('onlineQueryInput').focus();
+    }
+
+    function closeOnlineSearchModal() {
+      document.getElementById('onlineSearchModal').classList.add('hidden');
+      document.getElementById('onlineSearchModal').classList.remove('flex');
+    }
+
+    async function searchGoogleBooks(e) {
+      e.preventDefault();
+      const q = document.getElementById('onlineQueryInput').value.trim();
+      const statusEl = document.getElementById('onlineSearchStatus');
+      const listEl = document.getElementById('onlineResultsList');
+
+      statusEl.classList.remove('hidden');
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2 text-[#38bdf8]"></i>Ricerca edizioni online...`;
+      listEl.innerHTML = '';
+
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12`);
+        const data = await res.json();
+
+        if (!data.items || data.items.length === 0) {
+          statusEl.textContent = 'Nessun risultato trovato. Prova con un altro titolo o inseriscilo manualmente.';
+          return;
+        }
+
+        statusEl.classList.add('hidden');
+        tempOnlineResults = data.items.map(item => {
+          const info = item.volumeInfo || {};
+          const pub = info.publisher ? ` (${info.publisher})` : '';
+          const cover = info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail).replace('http://', 'https://') : '';
+          return {
+            title: (info.title || 'Senza titolo') + pub,
+            author: (info.authors && info.authors.length) ? info.authors.join(', ') : 'Autore sconosciuto',
+            genre: (info.categories && info.categories[0]) ? info.categories[0] : 'Narrativa',
+            totalPages: info.pageCount || 250,
+            cover
+          };
+        });
+
+        listEl.innerHTML = tempOnlineResults.map((b, i) => `
+          <div class="bg-[#242427] p-3 rounded-2xl flex items-center justify-between gap-3 border border-zinc-800">
+            <div class="flex items-center gap-3 min-w-0">
+              <img src="${b.cover || 'https://placehold.co/80x120/27272a/a1a1aa?text=Cover'}" class="w-12 h-18 object-cover rounded-lg shrink-0" />
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">${b.title}</p>
+                <p class="text-[11px] text-zinc-400 truncate">${b.author}</p>
+                <p class="text-[10px] text-[#38bdf8] mt-0.5">${b.totalPages} pagine • ${b.genre}</p>
+              </div>
+            </div>
+            <button onclick="pickOnlineBook(${i})" class="bg-[#0a84ff] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shrink-0">
+              Scegli
+            </button>
+          </div>
+        `).join('');
+      } catch (err) {
+        statusEl.textContent = 'Errore durante la connessione a Google Books.';
+      }
+    }
+
+    function pickOnlineBook(index) {
+      const b = tempOnlineResults[index];
+      closeOnlineSearchModal();
+      openBookEditorModal(null, b);
+    }
+
+    // --- MODALE CONFIGURA / MODIFICA LIBRO ---
+    function openBookEditorModal(bookId = null, prefill = null) {
+      const existing = bookId ? books.find(x => x.id === bookId) : null;
+
+      document.getElementById('editBookId').value = existing ? existing.id : '';
+      document.getElementById('editBookCover').value = existing ? existing.cover : (prefill ? prefill.cover : '');
+      document.getElementById('editTitle').value = existing ? existing.title : (prefill ? prefill.title : '');
+      document.getElementById('editAuthor').value = existing ? existing.author : (prefill ? prefill.author : '');
+      document.getElementById('editGenre').value = existing ? existing.genre : (prefill ? prefill.genre : 'Narrativa');
+      document.getElementById('editOwnership').value = existing ? existing.ownership : 'owned';
+      document.getElementById('editReadingStatus').value = existing ? existing.readingStatus : 'reading';
+      document.getElementById('editCurrentPages').value = existing ? existing.currentPages : 0;
+      document.getElementById('editTotalPages').value = existing ? existing.totalPages : (prefill ? prefill.totalPages : 250);
+      document.getElementById('editRating').value = (existing && existing.rating !== null) ? existing.rating : '';
+
+      const delBtn = document.getElementById('deleteBookBtn');
+      if (existing) delBtn.classList.remove('hidden');
+      else delBtn.classList.add('hidden');
+
+      closeOnlineSearchModal();
+      document.getElementById('bookEditorModal').classList.remove('hidden');
+      document.getElementById('bookEditorModal').classList.add('flex');
+    }
+
+    function closeBookEditorModal() {
+      document.getElementById('bookEditorModal').classList.add('hidden');
+      document.getElementById('bookEditorModal').classList.remove('flex');
+    }
+
+    function syncPagesWithStatus() {
+      const st = document.getElementById('editReadingStatus').value;
+      const tot = Number(document.getElementById('editTotalPages').value) || 0;
+      if (st === 'read') document.getElementById('editCurrentPages').value = tot;
+      if (st === 'unread' || st === 'to_read') document.getElementById('editCurrentPages').value = 0;
+    }
+
+    function saveBook(e) {
+      e.preventDefault();
+      const id = document.getElementById('editBookId').value;
+      const totalPages = Math.max(1, Number(document.getElementById('editTotalPages').value));
+      let currentPages = Math.max(0, Number(document.getElementById('editCurrentPages').value));
+      let readingStatus = document.getElementById('editReadingStatus').value;
+
+      if (readingStatus === 'read') currentPages = totalPages;
+      else if (currentPages >= totalPages) {
+        currentPages = totalPages;
+        readingStatus = 'read';
+      }
+
+      const rawRating = document.getElementById('editRating').value;
+      const rating = rawRating !== '' ? Math.min(10, Math.max(0, parseFloat(rawRating))) : null;
+
+      const bookObj = {
+        id: id || 'b_' + Date.now(),
+        title: document.getElementById('editTitle').value.trim(),
+        author: document.getElementById('editAuthor').value.trim(),
+        genre: document.getElementById('editGenre').value.trim(),
+        ownership: document.getElementById('editOwnership').value,
+        readingStatus,
+        currentPages,
+        totalPages,
+        rating,
+        cover: document.getElementById('editBookCover').value
+      };
+
+      if (id) {
+        const idx = books.findIndex(x => x.id === id);
+        if (idx > -1) books[idx] = bookObj;
+      } else {
+        books.unshift(bookObj);
+      }
+
+      saveState();
+      closeBookEditorModal();
+      renderMainGrid();
+    }
+
+    function deleteCurrentBook() {
+      const id = document.getElementById('editBookId').value;
+      if (!id) return;
+      books = books.filter(b => b.id !== id);
+      saveState();
+      closeBookEditorModal();
+      renderMainGrid();
+    }
+
+    // --- STATISTICHE PER AUTORE E GENERE ---
+    function renderStatsView() {
+      const onlyRead = document.getElementById('filterStatsOnlyRead').checked;
+      const list = onlyRead ? books.filter(b => b.readingStatus === 'read') : books;
+
+      document.getElementById('statReadCount').textContent = books.filter(b => b.readingStatus === 'read').length;
+      document.getElementById('statOwnedCount').textContent = books.filter(b => b.ownership === 'owned').length;
+
+      const rated = list.filter(b => b.rating !== null && b.rating !== '');
+      const avg = rated.length ? (rated.reduce((s, b) => s + Number(b.rating), 0) / rated.length).toFixed(1) : '-';
+      document.getElementById('statAvgScore').textContent = avg !== '-' ? `★ ${avg}` : '-';
+
+      const totPages = books.reduce((s, b) => s + Number(b.currentPages || 0), 0);
+      document.getElementById('statTotalPages').textContent = totPages.toLocaleString('it-IT');
+
+      const byAuthor = {};
+      const byGenre = {};
+      list.forEach(b => {
+        byAuthor[b.author] = (byAuthor[b.author] || 0) + 1;
+        byGenre[b.genre] = (byGenre[b.genre] || 0) + 1;
+      });
+
+      renderBars('authorsBreakdown', byAuthor, list.length, 'bg-[#ff9f0a]');
+      renderBars('genresBreakdown', byGenre, list.length, 'bg-[#30d158]');
+    }
+
+    function renderBars(containerId, obj, total, colorClass) {
+      const el = document.getElementById(containerId);
+      const sorted = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+      if (sorted.length === 0) {
+        el.innerHTML = `<p class="text-xs text-zinc-500">Nessun libro corrispondente.</p>`;
+        return;
+      }
+      el.innerHTML = sorted.map(([name, count]) => {
+        const pct = Math.round((count / total) * 100);
+        return `
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-200 font-medium">${name}</span>
+              <span class="text-zinc-400 font-bold">${count} ${count === 1 ? 'libro' : 'libri'}</span>
+            </div>
+            <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div class="h-full ${colorClass}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- TRACKER PAGINE GIORNALIERO ---
+    function renderTrackerView() {
+      document.getElementById('trackerDateInput').value = getTodayISO();
+      const sel = document.getElementById('trackerBookSelect');
+      sel.innerHTML = books.map(b => `<option value="${b.id}">${b.title} (${b.currentPages}/${b.totalPages} p.)</option>`).join('');
+
+      const listEl = document.getElementById('trackerLogsList');
+      if (logs.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-zinc-500">Nessuna sessione registrata finora.</p>`;
+        return;
+      }
+      listEl.innerHTML = logs.map(l => `
+        <div class="flex items-center justify-between bg-[#242427] px-4 py-2.5 rounded-xl text-xs">
+          <div>
+            <span class="font-bold text-white">${l.bookTitle}</span>
+            <span class="text-zinc-400 ml-2">${l.date}</span>
+          </div>
+          <span class="text-[#32ade6] font-bold">+${l.pages} pagine</span>
+        </div>
+      `).join('');
+    }
+
+    function submitDailyLog(e) {
+      e.preventDefault();
+      const bookId = document.getElementById('trackerBookSelect').value;
+      const date = document.getElementById('trackerDateInput').value;
+      const pages = Number(document.getElementById('trackerPagesInput').value);
+
+      const book = books.find(b => b.id === bookId);
+      if (!book || pages <= 0) return;
+
+      logs.unshift({ bookId, bookTitle: book.title, date, pages });
+      book.currentPages = Math.min(book.totalPages, book.currentPages + pages);
+      if (book.currentPages >= book.totalPages) {
+        book.readingStatus = 'read';
+      } else {
+        book.readingStatus = 'reading';
+      }
+
+      document.getElementById('trackerPagesInput').value = '';
+      saveState();
+      renderTrackerView();
+    }
+
+    // Avvio iniziale
+    updateSidebarUI();
+    renderMainGrid();
+  </script>
+</body>
+</html>
